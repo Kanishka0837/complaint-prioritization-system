@@ -15,5 +15,6 @@ This project prioritizes municipal complaints using Data Structures & Algorithms
 - Greedy Algorithm
 - Merge Sort
 
-## Note
-This project was developed with the assistance of AI tools, and I focused on understanding and structuring the logic.
+
+## Development Note
+This project was built using modern development tools and focuses on applying data structures and algorithms to solve real-world problems.
