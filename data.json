@@ -1,0 +1,20 @@
+{
+  "water": 3,
+  "electricity": 4,
+  "road": 8,
+  "sanitation": 2,
+  "other": 0,
+  "resolved": 1,
+  "complaints": [
+    {"id": 1,"name": "Rahul Sharma","zone": "Zone_A","type": 2,"severity": 3,"score": 29.1101},
+    {"id": 2,"name": "Priya Iyer","zone": "Zone_B","type": 1,"severity": 2,"score": 27.0685},
+    {"id": 3,"name": "Amit Desai","zone": "Zone_C","type": 2,"severity": 1,"score": 18.1518},
+    {"id": 4,"name": "Sunita Patil","zone": "Zone_A","type": 3,"severity": 3,"score": 29.2351},
+    {"id": 5,"name": "Deepak Kulkarni","zone": "Zone_D","type": 2,"severity": 1,"score": 21.3185},
+    {"id": 6,"name": "Meena Joshi","zone": "Zone_E","type": 1,"severity": 0,"score": 17.3185},
+    {"id": 7,"name": "Vinod Nair","zone": "Zone_B","type": 2,"severity": 3,"score": 31.8463},
+    {"id": 8,"name": "Kavya Reddy","zone": "Zone_C","type": 0,"severity": 2,"score": 25.624},
+    {"id": 9,"name": "Arjun Mehta","zone": "Zone_D","type": 3,"severity": 1,"score": 19.1101},
+    {"id": 10,"name": "Sonal Kapoor","zone": "Zone_E","type": 1,"severity": 0,"score": 17.3185}
+  ]
+}

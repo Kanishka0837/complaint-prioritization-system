@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCPS Dashboard — MIT-WPU CET Panel F</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #f5f5f3;
+    --surface:  #ffffff;
+    --surface2: #f1efe8;
+    --border:   rgba(0,0,0,0.10);
+    --text1:    #1a1a18;
+    --text2:    #5f5e5a;
+    --text3:    #888780;
+    --rad-md:   8px;
+    --rad-lg:   12px;
+    --navy:     #1A3A6B;
+    --red:      #E24B4A;
+    --amber:    #EF9F27;
+    --blue:     #378ADD;
+    --teal:     #1D9E75;
+    --gray:     #888780;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:      #1c1c1a;
+      --surface: #252522;
+      --surface2:#2c2c2a;
+      --border:  rgba(255,255,255,0.10);
+      --text1:   #f1efe8;
+      --text2:   #b4b2a9;
+      --text3:   #888780;
+    }
+  }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+         background: var(--bg); color: var(--text1); min-height: 100vh; padding: 1.5rem; }
+
+  .dash { max-width: 1100px; margin: 0 auto; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .topbar-brand { font-size: 18px; font-weight: 600; color: var(--navy); }
+  .topbar-sub  { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .badge { font-size: 11px; font-weight: 500; padding: 3px 12px; border-radius: 20px;
+           background: rgba(29,158,117,.15); color: #0f6e56; margin-left: 10px; }
+  @media (prefers-color-scheme: dark) { .badge { color: #5dcaa5; } }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #2d9e75;
+              display: inline-block; margin-right: 5px; animation: pulse 1.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .ts { font-size: 12px; color: var(--text3); }
+
+  /* Metrics */
+  .metrics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 1.25rem; }
+  .metric { background: var(--surface2); border-radius: var(--rad-md); padding: .85rem 1rem; }
+  .metric-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+  .metric-val   { font-size: 28px; font-weight: 600; line-height: 1; }
+  .metric-sub   { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .metric-sub.danger { color: var(--red); }
+  .metric-sub.success { color: var(--teal); }
+
+  /* Cards */
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--rad-lg); padding: 1rem 1.15rem; }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 12px;
+                display: flex; align-items: center; justify-content: space-between; }
+  .card-title span { font-size: 11px; font-weight: 400; color: var(--text3); }
+
+  .grid2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* Queue table */
+  .queue-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .queue-table th { font-size: 11px; font-weight: 500; color: var(--text2); text-align: left;
+                    padding: 0 8px 8px; border-bottom: 0.5px solid var(--border); }
+  .queue-table td { padding: 8px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+  .queue-table tr:last-child td { border-bottom: none; }
+
+  .score-pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .urg-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+             margin-right: 4px; vertical-align: middle; }
+  .cat-icon { width: 20px; height: 20px; border-radius: 4px; display: inline-flex;
+              align-items: center; justify-content: center; font-size: 11px; font-weight: 600;
+              margin-right: 5px; vertical-align: middle; }
+
+  /* Zone grid */
+  .zone-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .zone-card { border: 0.5px solid var(--border); border-radius: var(--rad-md); padding: .6rem .75rem; }
+  .zone-name { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 2px; }
+  .zone-count { font-size: 20px; font-weight: 600; }
+  .zone-bar-bg { background: var(--border); border-radius: 4px; height: 4px; margin-top: 6px; }
+  .zone-bar { height: 4px; border-radius: 4px; }
+
+  /* Activity */
+  .activity-list { display: flex; flex-direction: column; gap: 9px; max-height: 300px; overflow-y: auto; }
+  .activity-item { display: flex; align-items: flex-start; gap: 10px; font-size: 12px; }
+  .act-icon { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center;
+              justify-content: center; flex-shrink: 0; font-size: 11px; font-weight: 600; }
+  .act-text { color: var(--text1); line-height: 1.4; }
+  .act-time { color: var(--text3); font-size: 11px; margin-top: 1px; }
+
+  /* legend */
+  .legend-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; font-size: 11px; color: var(--text2); }
+  .leg { display: flex; align-items: center; gap: 4px; }
+  .leg-sq { width: 9px; height: 9px; border-radius: 2px; }
+
+  /* footer */
+  .footer { text-align: center; font-size: 11px; color: var(--text3); margin-top: 1.5rem; padding-top: 1rem;
+            border-top: 0.5px solid var(--border); }
+
+  @media (max-width: 700px) {
+    .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+    .zone-grid { grid-template-columns: repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="dash">
+
+  <div class="topbar">
+    <div>
+      <div class="topbar-brand">
+        Municipal Complaint Dashboard
+        <span class="badge"><span class="live-dot"></span>Live</span>
+      </div>
+      <div class="topbar-sub">Digital Complaint Prioritization System &nbsp;|&nbsp; MIT-WPU CET &nbsp;|&nbsp; SY-CSE Panel F &nbsp;|&nbsp; CSE20090</div>
+    </div>
+    <div class="ts" id="clock"></div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Total Complaints</div>
+<div class="metric-val" id="total">0</div>
+      <!--<div class="metric-sub danger">+12 today</div>-->
+    </div>
+    <div class="metric">
+      <div class="metric-label">Pending</div>
+<div class="metric-val" id="pending" style="color:var(--amber)">0</div>
+      <!--<div class="metric-sub danger">+5 since morning</div>-->
+    </div>
+    <div class="metric">
+      <div class="metric-label">Resolved</div>
+      <div class="metric-val" style="color:var(--teal)" id="resolved">0</div>
+     <!-- <div class="metric-sub success">63.9% resolution rate</div> -->
+    </div>
+    <div class="metric">
+      <div class="metric-label">Critical</div>
+      <div class="metric-val" style="color:var(--red)" id="critical">0</div>
+      <!-- <div class="metric-sub danger">Immediate action needed</div> -->
+    </div>
+  </div>
+
+  <!-- ROW 1: bar + doughnut -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Complaints filed by category <span>last 7 days</span></div>
+      <div class="legend-row">
+        <span class="leg"><span class="leg-sq" style="background:#378ADD"></span>Water</span>
+        <span class="leg"><span class="leg-sq" style="background:#E24B4A"></span>Electricity</span>
+        <span class="leg"><span class="leg-sq" style="background:#EF9F27"></span>Road</span>
+        <span class="leg"><span class="leg-sq" style="background:#1D9E75"></span>Sanitation</span>
+        <span class="leg"><span class="leg-sq" style="background:#888780"></span>Other</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="barChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Category share <span>all time</span></div>
+      <div class="legend-row">
+        <span class="leg"><span class="leg-sq" style="background:#378ADD"></span>Water 40%</span>
+        <span class="leg"><span class="leg-sq" style="background:#E24B4A"></span>Elec 22%</span>
+        <span class="leg"><span class="leg-sq" style="background:#EF9F27"></span>Road 18%</span>
+      </div>
+      <div class="legend-row">
+        <span class="leg"><span class="leg-sq" style="background:#1D9E75"></span>Sanitation 13%</span>
+        <span class="leg"><span class="leg-sq" style="background:#888780"></span>Other 5%</span>
+      </div>
+      <div class="chart-wrap" style="height:180px"><canvas id="doughnutChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 2: queue + activity -->
+  <div class="grid3">
+    <div class="card">
+      <div class="card-title">
+        Priority queue — top pending complaints
+        <span style="background:rgba(226,75,74,.1);color:var(--red);padding:2px 8px;border-radius:20px;">
+          Terminal handles resolution
+        </span>
+      </div>
+      <table class="queue-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Category</th><th>Citizen</th><th>Zone</th><th>Urgency</th><th>Score</th><th>Age</th>
+          </tr>
+        </thead>
+        <tbody id="queueBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Recent activity</div>
+      <div class="activity-list" id="activityList"></div>
+    </div>
+  </div>
+
+  <!-- ROW 3: zones + trend -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Active complaints by zone</div>
+      <div class="zone-grid" id="zoneGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Filed vs Resolved trend <span>7 days</span></div>
+      <div class="legend-row">
+        <span class="leg"><span class="leg-sq" style="background:#378ADD"></span>Filed</span>
+        <span class="leg"><span class="leg-sq" style="background:#1D9E75"></span>Resolved</span>
+      </div>
+      <div class="chart-wrap" style="height:140px"><canvas id="lineChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Team: Shruti Kuril &nbsp;|&nbsp; Kanishka Malpani &nbsp;&nbsp;&bull;&nbsp;&nbsp;
+    DAA Project — PBL-II (CSE20090) &nbsp;&bull;&nbsp; MIT World Peace University, Pune 2025-26
+    <br><br>
+    <strong>Note:</strong> Complaint filing and resolution are terminal-only (run <code>complaint_system.cpp</code>). This dashboard is read-only monitoring.
+  </div>
+</div>
+
+<script>
+// Clock
+function updateClock(){
+  const now=new Date();
+  document.getElementById('clock').textContent=
+    now.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'})
+    +' '+now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+updateClock(); setInterval(updateClock,1000);
+
+const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+const textCol=isDark?'rgba(255,255,255,0.45)':'rgba(0,0,0,0.45)';
+const gridCol=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
+
+const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// Charts (unchanged)
+const barChart = new Chart(document.getElementById('barChart'),{
+  type:'bar',
+  data:{labels:days,datasets:[
+    {label:'Water',data:[0,0,0,0,0,0,0],backgroundColor:'#378ADD'},
+    {label:'Electricity',data:[0,0,0,0,0,0,0],backgroundColor:'#E24B4A'},
+    {label:'Road',data:[0,0,0,0,0,0,0],backgroundColor:'#EF9F27'},
+    {label:'Sanitation',data:[0,0,0,0,0,0,0],backgroundColor:'#1D9E75'},
+    {label:'Other',data:[0,0,0,0,0,0,0],backgroundColor:'#888780'}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+});
+
+const doughnutChart = new Chart(document.getElementById('doughnutChart'),{
+  type:'doughnut',
+  data:{labels:['Water','Electricity','Road','Sanitation','Other'],
+    datasets:[{data:[0,0,0,0,0],
+      backgroundColor:['#378ADD','#E24B4A','#EF9F27','#1D9E75','#888780']}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
+});
+
+// const lineChart = new Chart(document.getElementById('lineChart'),{
+//   type:'line',
+//   data:{labels:[],datasets:[
+//     {label:'Filed',data:[],borderColor:'#378ADD'},
+//     {label:'Resolved',data:[],borderColor:'#1D9E75'}
+//   ]},
+//   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+// });
+
+// 🚀 REAL DATA SYNC
+async function loadRealData(){
+  
+  try{
+    const res = await fetch("data.json?nocache="+Date.now());
+    const d = await res.json();
+
+    const total = d.water+d.electricity+d.road+d.sanitation+d.other;
+    const pending = total - d.resolved;
+
+    // METRICS
+    document.getElementById("total").innerText = total;
+    document.getElementById("pending").innerText = pending;
+    document.getElementById("resolved").innerText = d.resolved;
+// 🔥 ADD HERE (CRITICAL COUNT FIX)
+let criticalCount = 0;
+
+if (d.complaints && Array.isArray(d.complaints)) {
+  d.complaints.forEach(c => {
+    if (Number(c.severity) === 3) {
+      criticalCount++;
+    }
+  });
+}
+
+document.getElementById("critical").innerText = criticalCount;
+
+    // CRITICAL (approx)
+    //document.getElementById("critical").innerText = Math.floor(total*0.1);
+
+    const arr=[d.water,d.electricity,d.road,d.sanitation,d.other];
+
+    // CHARTS
+    doughnutChart.data.datasets[0].data = arr;
+    doughnutChart.update();
+
+barChart.data.datasets[0].data = [d.water,0,0,0,0,0,0];
+barChart.data.datasets[1].data = [d.electricity,0,0,0,0,0,0];
+barChart.data.datasets[2].data = [d.road,0,0,0,0,0,0];
+barChart.data.datasets[3].data = [d.sanitation,0,0,0,0,0,0];
+barChart.data.datasets[4].data = [d.other,0,0,0,0,0,0];    barChart.update();
+
+// lineChart.data.labels.push(new Date().toLocaleTimeString());
+//     lineChart.data.datasets[0].data.push(total);
+//     lineChart.data.datasets[1].data.push(d.resolved);
+
+//     if(lineChart.data.labels.length>7){
+//       lineChart.data.labels.shift();
+//       lineChart.data.datasets[0].data.shift();
+//       lineChart.data.datasets[1].data.shift();
+//     }
+//     lineChart.update();
+
+    // 🔥 ACTIVITY LOG (LIVE)
+    const al=document.getElementById("activityList");
+    al.innerHTML=`
+      <div class="activity-item">
+        <div class="act-icon" style="background:rgba(55,138,221,.15);color:#378ADD">N</div>
+        <div><div class="act-text">Total complaints updated: ${total}</div><div class="act-time">Now</div></div>
+      </div>
+      <div class="activity-item">
+        <div class="act-icon" style="background:rgba(29,158,117,.15);color:#1D9E75">✓</div>
+        <div><div class="act-text">${d.resolved} resolved complaints</div><div class="act-time">Live</div></div>
+      </div>
+    `;
+
+    // 🔥 ZONES (DYNAMIC)
+    const zg=document.getElementById('zoneGrid');
+    zg.innerHTML="";
+    const zones=[
+      {name:'Zone-A',count:Math.floor(total*0.3),color:'#E24B4A'},
+      {name:'Zone-B',count:Math.floor(total*0.25),color:'#EF9F27'},
+      {name:'Zone-C',count:Math.floor(total*0.2),color:'#378ADD'},
+      {name:'Zone-D',count:Math.floor(total*0.1),color:'#888780'},
+      {name:'Zone-E',count:Math.floor(total*0.1),color:'#1D9E75'}
+    ];
+    const max=Math.max(...zones.map(z=>z.count));
+
+    zones.forEach(z=>{
+      zg.innerHTML+=`
+        <div class="zone-card">
+          <div class="zone-name">${z.name}</div>
+          <div class="zone-count" style="color:${z.color}">${z.count}</div>
+          <div class="zone-bar-bg">
+            <div class="zone-bar" style="width:${(z.count/max)*100}%;background:${z.color}"></div>
+          </div>
+        </div>`;
+    });
+    // 🔥 REAL PRIORITY QUEUE TABLE
+const tbody = document.getElementById("queueBody");
+tbody.innerHTML = "";
+
+if(d.complaints && d.complaints.length > 0){
+
+  d.complaints.forEach(c => {
+
+    let typeMap = ["Water","Electricity","Road","Sanitation","Other"];
+    let type = typeMap[c.type] || "Other";
+
+    let severityMap = ["LOW","MEDIUM","HIGH","CRITICAL"];
+let urgency = severityMap[c.severity] || "LOW";
+
+let color = "gray";
+if(urgency === "MEDIUM") color = "cyan";
+if(urgency === "HIGH") color = "orange";
+if(urgency === "CRITICAL") color = "red";
+
+    tbody.innerHTML += `
+      <tr>
+        <td>#${c.id}</td>
+        <td>${type}</td>
+        <td>${c.name}</td>
+        <td>${c.zone}</td>
+        <td><span style="color:${color}">${urgency}</span></td>
+        <td>${c.score}</td>
+        <td>Live</td>
+      </tr>
+    `;
+  });
+
+}else{
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="7" style="text-align:center;color:gray;">
+        No pending complaints
+      </td>
+    </tr>
+  `;
+}
+
+
+  }catch(e){
+    console.log("Waiting for data.json...");
+  }
+}
+
+setInterval(loadRealData,2000);
+loadRealData();
+
+</script>
+</body>
+</html>
