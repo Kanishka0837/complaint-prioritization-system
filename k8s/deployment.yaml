@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: complaint-prioritization
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: complaint-prioritization
+  template:
+    metadata:
+      labels:
+        app: complaint-prioritization
+    spec:
+      imagePullSecrets:
+        - name: ecr-secret
+      containers:
+        - name: complaint-dashboard
+          image: 905063831150.dkr.ecr.ap-south-1.amazonaws.com/complaint-prioritization-system:latest
+          ports:
+            - containerPort: 80
