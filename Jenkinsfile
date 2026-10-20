@@ -39,8 +39,8 @@ pipeline {
                 sh '''
                     kubectl apply -f k8s/deployment.yaml
                     kubectl apply -f k8s/service.yaml
-                    sh 'kubectl rollout restart deployment/complaint-prioritization'
-                    sh 'kubectl rollout status deployment/complaint-prioritization --timeout=180s'
+                    kubectl rollout restart deployment/complaint-prioritization
+                    kubectl rollout status deployment/complaint-prioritization --timeout=180s
                 '''
             }
         }
