@@ -17,5 +17,6 @@ spec:
       containers:
         - name: complaint-dashboard
           image: 905063831150.dkr.ecr.ap-south-1.amazonaws.com/complaint-prioritization-system:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
